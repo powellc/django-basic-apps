@@ -20,7 +20,7 @@ class AutoCompleteTagInput(forms.TextInput):
 
     def render(self, name, value, attrs=None):
         output = super(AutoCompleteTagInput, self).render(name, value, attrs)
-        page_tags = Tag.objects.usage_for_model(Recipe)
+        page_tags = Tag.objects.usage_for_model(Post)
         tag_list = simplejson.dumps([tag.name for tag in page_tags],
                                     ensure_ascii=False)
         return output + mark_safe(u'''<script type="text/javascript">
