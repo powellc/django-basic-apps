@@ -1,6 +1,7 @@
 import datetime
 import re
 
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.http import Http404
@@ -9,6 +10,7 @@ from django.db.models import Q
 from django.conf import settings
 from basic.blog.models import *
 from tagging.models import Tag, TaggedItem
+from basic.blog.forms import PostForm
 
 
 def post_list(request, page=0, paginate_by=20, **kwargs):
@@ -192,4 +194,17 @@ def search(request, template_name='blog/post_search.html'):
         else:
             message = 'Search term was too vague. Please try again.'
             context = {'message':message}
-    return render_to_response(template_name, context, context_instance=RequestContext(request))
+    return render_to_response(template_name, context, context_instance=RequestContext(request)) 
+    
+@staff_member_required
+def post_create(request):
+    form=PostForm(request.POST or None)
+    if form.is_valid():
+        post=form.save(commit=False)
+        post.author=request.user
+        post.slug=slugify(post.title)
+        post.save()
+        return HttpResponseRedirect(reverse('post-added', args=[]))
+
+    return render_to_response('recipes/post_create.html', locals(),
+                              context_instance=RequestContext(request))
