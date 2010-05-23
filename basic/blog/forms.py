@@ -10,4 +10,4 @@ class PostForm(forms.ModelForm):
 
     class Meta:
         model=Post
-        exclude=('author', 'slug')
+        exclude=('author', 'slug', 'allow_comments', 'publish',)

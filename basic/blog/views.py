@@ -11,7 +11,7 @@ from django.conf import settings
 from basic.blog.models import *
 from tagging.models import Tag, TaggedItem
 from basic.blog.forms import PostForm
-
+from django.template.defaultfilters import slugify
 
 def post_list(request, page=0, paginate_by=20, **kwargs):
     page_size = getattr(settings,'BLOG_PAGESIZE', paginate_by)
@@ -203,8 +203,10 @@ def post_create(request):
         post=form.save(commit=False)
         post.author=request.user
         post.slug=slugify(post.title)
+        post.allow_comments=False
+        post.publish=datetime.datetime.now()
         post.save()
         return HttpResponseRedirect(reverse('post-added', args=[]))
 
-    return render_to_response('recipes/post_create.html', locals(),
+    return render_to_response('blog/post_create.html', locals(),
                               context_instance=RequestContext(request))
