@@ -46,4 +46,8 @@ urlpatterns = patterns('basic.blog.views',
         view='post_list',
         name='blog_index'
     ),
+    url(r'^(?P<filter>[-\w]+)/$', 
+        view='post_list', 
+        name='blog_index_filtered'),
+    
 )

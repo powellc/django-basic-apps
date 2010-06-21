@@ -1,8 +1,9 @@
 import datetime
 import re
 
+from django.http import HttpResponseRedirect
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.http import Http404
 from django.views.generic import date_based, list_detail
@@ -12,12 +13,41 @@ from basic.blog.models import *
 from tagging.models import Tag, TaggedItem
 from basic.blog.forms import PostForm
 from django.template.defaultfilters import slugify
+from django.core.urlresolvers import reverse
 
-def post_list(request, page=0, paginate_by=20, **kwargs):
+
+def post_list(request, page=0, paginate_by=20, filter="", message=None, **kwargs):
+    if request.method == 'POST' and request.user.is_staff:
+        post=Post.objects.get(id=request.POST.get("id", None))
+        if request.POST.get("delete", None):
+            try:
+                post.delete()
+                message='Post successfully deleted.'
+            except:
+                message='Post could not be deleted. Please contact your administrator.'
+        else:
+            post.status=request.POST.get("status")
+            try:
+                post.save()
+                message='Post successfully changed.'
+            except:
+                message='Post could not be changed. Please contact your adminsitrator.'
+        return redirect('blog_index')
+        
+    if request.user.is_staff:
+        if filter == "published":
+            posts=Post.objects.published()
+        elif filter == "unpublished":
+            posts=Post.objects.exclude(status=2)
+        else:
+            posts=Post.objects.all()
+    else:
+        posts=Post.objects.published()
+            
     page_size = getattr(settings,'BLOG_PAGESIZE', paginate_by)
     return list_detail.object_list(
         request,
-        queryset=Post.objects.published(),
+        queryset=posts,
         paginate_by=page_size,
         page=page,
         **kwargs
@@ -205,8 +235,13 @@ def post_create(request):
         post.slug=slugify(post.title)
         post.allow_comments=False
         post.publish=datetime.datetime.now()
-        post.save()
-        return HttpResponseRedirect(reverse('post-added', args=[]))
+        try:
+            post.save()
+            message='Post save successfully.'
+        except:
+            message='Post could not be saved. Contact your administrator.'
+        context= {'message':message}
+        return redirect('blog_index')
 
     return render_to_response('blog/post_create.html', locals(),
                               context_instance=RequestContext(request))
